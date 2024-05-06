@@ -1,0 +1,3 @@
+Epoch: 99, Train Loss: 0.0363, Train IoU: 0.8937, Test Loss: 0.1082, Test IoU: 0.8201
+GPU Latency: 79.8908 ms
+CPU Latency: 94.4120 ms

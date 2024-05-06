@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Training Status</title>
+  <script>
+    async function startTraining() {
+      try {
+        // AJAX를 사용하여 서버에 학습 시작 요청을 보냅니다.
+        let response = await fetch("/myapp/start-training/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"), // CSRF 토큰 추가
+          },
+        });
+        if (!response.ok) throw new Error("Network response was not ok.");
+        let data = await response.json();
+
+        // WebSocket을 사용하여 학습 상태 업데이트를 실시간으로 받습니다.
+        const ws_scheme =
+          window.location.protocol === "https:" ? "wss" : "ws";
+        const sessionId = data.session_id;
+        const ws_path = `${ws_scheme}://${window.location.host}/ws/status/${sessionId}/`;
+        const websocket = new WebSocket(ws_path);
+
+        websocket.onmessage = function (e) {
+          const data = JSON.parse(e.data);
+          document.querySelector("#trainingStatus").innerText =
+            `Progress: ${data.progress}%, Details: ${data.details}`;
+        };
+
+        websocket.onclose = function (e) {
+          console.error("WebSocket closed unexpectedly");
+        };
+      } catch (error) {
+        console.error("Error starting training:", error);
+      }
+    }
+
+    // CSRF 토큰을 가져오기 위한 함수
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          // Does this cookie string begin with the name we want?
+          if (cookie.substring(0, name.length + 1) === name + "=") {
+            cookieValue = decodeURIComponent(
+              cookie.substring(name.length + 1),
+            );
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Training Session Status</h1>
+  <button id="startTraining" onclick="startTraining()">Start Training</button>
+  <div id="trainingStatus">Waiting for status...</div>
+</body>
+
+</html>
